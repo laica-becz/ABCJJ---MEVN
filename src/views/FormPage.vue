@@ -58,7 +58,7 @@ const router = useRouter()
 
 const isEdit = ref(false)
 const editId = ref(null)
-const API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 const form = ref({
   name: '',
