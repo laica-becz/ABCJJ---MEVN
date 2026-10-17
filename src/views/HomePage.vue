@@ -82,6 +82,9 @@ const stats = ref({ total: 0, recent: 0, averageRating: 0 })
 const topRestaurants = ref([])
 const latestRestaurants = ref([])
 
+// Automatically switches between local proxy and live Render backend
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 const handleSearch = () => {
   router.push({ path: '/restaurants', query: { q: searchQuery.value } })
 }
@@ -89,9 +92,9 @@ const handleSearch = () => {
 onMounted(async () => {
   try {
     const [statsRes, topRes, latestRes] = await Promise.all([
-      fetch('/api/stats'),
-      fetch('/api/restaurants?sort=rating'),
-      fetch('/api/restaurants?sort=recent')
+      fetch(`${API_URL}/api/stats`),
+      fetch(`${API_URL}/api/restaurants?sort=rating`),
+      fetch(`${API_URL}/api/restaurants?sort=recent`)
     ])
     stats.value = await statsRes.json()
     const topData = await topRes.json()
