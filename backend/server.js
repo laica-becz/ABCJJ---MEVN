@@ -1,8 +1,13 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
-const path = require('path');
-const express = require('express');
-const { MongoClient } = require('mongodb');
+import path from 'path';
+import { fileURLToPath } from 'url';
+import express from 'express';
+import { MongoClient } from 'mongodb';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'dbRestaurants';
@@ -51,7 +56,6 @@ function validateRestaurant(b = {}) {
 /* ---------- App ---------- */
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
 
 const wrap = (fn) => (req, res, next) => fn(req, res, next).catch(next);
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -79,11 +83,11 @@ app.get('/api/restaurants', wrap(async (req, res) => {
   const { q, cuisine, location, sort } = req.query;
   const filter = {};
   if (q) {
-    const rx = { $regex: escapeRegex(String(q)), $options: 'i' };
+    const rx = { $regex: escapeRegex(String(q)),$options: 'i' };
     filter.$or = [{ name: rx }, { cuisine: rx }, { address: rx }];
   }
   if (cuisine) filter.cuisine = { $regex: `^${escapeRegex(String(cuisine))}$`, $options: 'i' };
-  if (location) filter.address = { $regex: escapeRegex(String(location)), $options: 'i' };
+  if (location) filter.address = { $regex: escapeRegex(String(location)),$options: 'i' };
   const sorts = {
     rating: { rating: -1, name: 1 },
     name: { name: 1 },
@@ -139,7 +143,13 @@ app.delete('/api/restaurants/:id', wrap(async (req, res) => {
   res.status(204).end();
 }));
 
-app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+// Serve static frontend files from Vite build in production
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Fallback route for Vue Router Single Page Application support
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 // Error handler (validation, bad input)
 app.use((err, req, res, next) => {
