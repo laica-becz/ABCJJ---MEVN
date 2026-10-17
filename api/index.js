@@ -1,24 +1,31 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import path from 'path';
-import { fileURLToPath } from 'url';
 import express from 'express';
 import { MongoClient } from 'mongodb';
 import cors from 'cors';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const MONGODB_URI = process.env.MONGODB_URI;
 const DB_NAME = process.env.DB_NAME || 'dbRestaurants';
-const PORT = process.env.PORT || 3000;
 
-/* ---------- Database: dbRestaurants.restaurants ---------- */
-const client = new MongoClient(MONGODB_URI);
-let restaurants;
+/* ---------- Database connection cache for Serverless ---------- */
+let cachedClient = null;
+let cachedDb = null;
 
-/* ---------- Validation (replaces the Mongoose schema rules) ---------- */
+async function connectToDatabase() {
+  if (cachedClient && cachedDb) {
+    return { client: cachedClient, db: cachedDb };
+  }
+  const client = new MongoClient(MONGODB_URI);
+  await client.connect();
+  const db = client.db(DB_NAME);
+  
+  cachedClient = client;
+  cachedDb = db;
+  return { client, db };
+}
+
+/* ---------- Validation ---------- */
 const PHONE_RX = /^(09\d{9}|\+639\d{9})$/;
 
 function validateRestaurant(b = {}) {
@@ -54,12 +61,21 @@ function validateRestaurant(b = {}) {
   return doc;
 }
 
-/* ---------- App ---------- */
+/* ---------- Express App ---------- */
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const wrap = (fn) => (req, res, next) => fn(req, res, next).catch(next);
+const wrap = (fn) => async (req, res, next) => {
+  try {
+    const { db } = await connectToDatabase();
+    req.restaurants = db.collection('restaurants');
+    return await fn(req, res, next);
+  } catch (err) {
+    next(err);
+  }
+};
+
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 function parseId(value) {
@@ -70,8 +86,8 @@ function parseId(value) {
   return n;
 }
 
-async function nextId() {
-  const last = await restaurants
+async function getNextId(restaurantsCollection) {
+  const last = await restaurantsCollection
     .find()
     .sort({ restaurant_id: -1 })
     .limit(1)
@@ -80,8 +96,8 @@ async function nextId() {
   return (last?.restaurant_id || 0) + 1;
 }
 
-// List + search / filter / sort (supports optional trailing slashes)
-app.get('/api/restaurants\/?', wrap(async (req, res) => {
+// List + search / filter / sort
+app.get('/api/restaurants', wrap(async (req, res) => {
   const { q, cuisine, location, sort } = req.query;
   const filter = {};
   if (q) {
@@ -95,41 +111,41 @@ app.get('/api/restaurants\/?', wrap(async (req, res) => {
     name: { name: 1 },
     recent: { updatedAt: -1 }
   };
-  const items = await restaurants.find(filter).sort(sorts[sort] || { restaurant_id: 1 }).toArray();
+  const items = await req.restaurants.find(filter).sort(sorts[sort] || { restaurant_id: 1 }).toArray();
   res.json(items);
 }));
 
 // Dashboard stats
-app.get('/api/stats\/?', wrap(async (req, res) => {
+app.get('/api/stats', wrap(async (req, res) => {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [total, recent, avg] = await Promise.all([
-    restaurants.countDocuments(),
-    restaurants.countDocuments({ updatedAt: { $gte: since } }),
-    restaurants.aggregate([{ $group: { _id: null, avg: { $avg: '$rating' } } }]).toArray()
+    req.restaurants.countDocuments(),
+    req.restaurants.countDocuments({ updatedAt: { $gte: since } }),
+    req.restaurants.aggregate([{ $group: { _id: null, avg: { $avg: '$rating' } } }]).toArray()
   ]);
   res.json({ total, recent, averageRating: avg[0] ? Number(avg[0].avg.toFixed(1)) : 0 });
 }));
 
 // Find by ID
-app.get('/api/restaurants/:id\/?', wrap(async (req, res) => {
-  const doc = await restaurants.findOne({ restaurant_id: parseId(req.params.id) });
+app.get('/api/restaurants/:id', wrap(async (req, res) => {
+  const doc = await req.restaurants.findOne({ restaurant_id: parseId(req.params.id) });
   if (!doc) return res.status(404).json({ error: 'Restaurant not found' });
   res.json(doc);
 }));
 
 // Create
-app.post('/api/restaurants\/?', wrap(async (req, res) => {
+app.post('/api/restaurants', wrap(async (req, res) => {
   const data = validateRestaurant(req.body);
   const now = new Date();
-  const doc = { ...data, restaurant_id: await nextId(), createdAt: now, updatedAt: now };
-  await restaurants.insertOne(doc);
+  const doc = { ...data, restaurant_id: await getNextId(req.restaurants), createdAt: now, updatedAt: now };
+  await req.restaurants.insertOne(doc);
   res.status(201).json(doc);
 }));
 
 // Update
-app.put('/api/restaurants/:id\/?', wrap(async (req, res) => {
+app.put('/api/restaurants/:id', wrap(async (req, res) => {
   const data = validateRestaurant(req.body);
-  const doc = await restaurants.findOneAndUpdate(
+  const doc = await req.restaurants.findOneAndUpdate(
     { restaurant_id: parseId(req.params.id) },
     { $set: { ...data, updatedAt: new Date() } },
     { returnDocument: 'after' }
@@ -139,26 +155,13 @@ app.put('/api/restaurants/:id\/?', wrap(async (req, res) => {
 }));
 
 // Delete
-app.delete('/api/restaurants/:id\/?', wrap(async (req, res) => {
-  const doc = await restaurants.findOneAndDelete({ restaurant_id: parseId(req.params.id) });
+app.delete('/api/restaurants/:id', wrap(async (req, res) => {
+  const doc = await req.restaurants.findOneAndDelete({ restaurant_id: parseId(req.params.id) });
   if (!doc) return res.status(404).json({ error: 'Restaurant not found' });
   res.status(204).end();
 }));
 
-// Catch-all safety for any unmatched /api routes (prevents serving HTML by mistake)
-app.all('/api/*', (req, res) => {
-  res.status(404).json({ error: 'API endpoint not found' });
-});
-
-// Serve static frontend files from Vite build in production
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// SPA wildcard fallback for frontend routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
-// Error handler (validation, bad input)
+// Error handler
 app.use((err, req, res, next) => {
   if (err.name === 'ValidationError') {
     return res.status(400).json({ error: err.details[0], details: err.details });
@@ -169,16 +172,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong on the server' });
 });
 
-client
-  .connect()
-  .then(async () => {
-    const db = client.db(DB_NAME);
-    restaurants = db.collection('restaurants');
-    await restaurants.createIndex({ restaurant_id: 1 }, { unique: true });
-    console.log(`MongoDB connected: ${db.databaseName}`);
-    app.listen(PORT, () => console.log(`ABCJ Finds running at http://localhost:${PORT}`));
-  })
-  .catch((err) => {
-    console.error('MongoDB connection failed:', err.message);
-    process.exit(1);
-  });
+export default app;
