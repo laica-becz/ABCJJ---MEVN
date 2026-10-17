@@ -66,7 +66,7 @@ cd C:\Users\PC\ABCJ-MEVN
 ### 2. Configure the Backend Environment
 Create a `.env` file inside your **backend** folder with the following variables:
 ```env
-MONGODB_URI=mongodb://127.0.0.1:27017/dbRestaurants
+MONGODB_URI=mongodb://<username>:<password>@ac-ju136tq-shard-00-00.abv92xg.mongodb.net:27017,ac-ju136tq-shard-00-01.abv92xg.mongodb.net:27017,ac-ju136tq-shard-00-02.abv92xg.mongodb.net:27017/dbRestaurants?ssl=true&replicaSet=atlas-tk4q9n-shard-0&authSource=admin&appName=Cluster0
 DB_NAME=dbRestaurants
 PORT=3000
 ```
