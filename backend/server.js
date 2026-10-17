@@ -148,8 +148,8 @@ app.delete('/api/restaurants/:id', wrap(async (req, res) => {
 // Serve static frontend files from Vite build in production
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Fallback route for Vue Router Single Page Application support
-app.get('/*', (req, res) => {
+// Express v5 compliant SPA wildcard fallback
+app.get('/(.*)', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
