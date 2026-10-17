@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import { MongoClient } from 'mongodb';
+import cors from 'cors';
+app.use(cors());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
