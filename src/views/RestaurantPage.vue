@@ -56,20 +56,21 @@ const restaurants = ref([])
 const uniqueCuisines = ref([])
 const filters = ref({ q: '', cuisine: '', sort: '' })
 
+const API_URL = import.meta.env.VITE_API_URL || ''
+
 const fetchRestaurants = async () => {
   const params = new URLSearchParams(Object.entries(filters.value).filter(([, v]) => v))
-  const res = await fetch(`/api/restaurants?${params.toString()}`)
+  const res = await fetch(`${API_URL}/api/restaurants?${params.toString()}`)
   restaurants.value = await res.json()
 }
 
 const deleteRestaurant = async (id) => {
   if (confirm('Are you sure you want to delete this restaurant?')) {
-    await fetch(`/api/restaurants/${id}`, { method: 'DELETE' })
+    await fetch(`${API_URL}/api/restaurants/${id}`, { method: 'DELETE' })
     fetchRestaurants()
   }
 }
 
-// Check URL query parameters when component mounts or route changes
 const applyRouteQuery = () => {
   if (route.query.q) {
     filters.value.q = route.query.q
@@ -79,12 +80,11 @@ const applyRouteQuery = () => {
 
 onMounted(async () => {
   applyRouteQuery()
-  const res = await fetch('/api/restaurants')
+  const res = await fetch(`${API_URL}/api/restaurants`)
   const all = await res.json()
   uniqueCuisines.value = [...new Set(all.map((r) => r.cuisine))]
 })
 
-// Watch for changes if a user clicks another card while already on the page
 watch(() => route.query.q, (newQ) => {
   filters.value.q = newQ || ''
   fetchRestaurants()
