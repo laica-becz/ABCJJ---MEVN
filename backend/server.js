@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 import express from 'express';
 import { MongoClient } from 'mongodb';
 import cors from 'cors';
-app.use(cors());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,6 +56,7 @@ function validateRestaurant(b = {}) {
 
 /* ---------- App ---------- */
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 const wrap = (fn) => (req, res, next) => fn(req, res, next).catch(next);
