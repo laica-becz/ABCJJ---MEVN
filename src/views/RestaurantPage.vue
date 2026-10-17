@@ -56,7 +56,7 @@ const restaurants = ref([])
 const uniqueCuisines = ref([])
 const filters = ref({ q: '', cuisine: '', sort: '' })
 
-const API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 const fetchRestaurants = async () => {
   const params = new URLSearchParams(Object.entries(filters.value).filter(([, v]) => v))
