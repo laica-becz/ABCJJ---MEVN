@@ -1,7 +1,8 @@
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
 
 const path = require('path');
-const express = require('express');
 const { MongoClient } = require('mongodb');
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -11,6 +12,13 @@ const PORT = process.env.PORT || 3000;
 /* ---------- Database: dbRestaurants.restaurants ---------- */
 const client = new MongoClient(MONGODB_URI);
 let restaurants;
+
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Fallback to index.html for Vue Router (SPA support)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
 
 /* ---------- Validation (replaces the Mongoose schema rules) ---------- */
 const PHONE_RX = /^(09\d{9}|\+639\d{9})$/;
