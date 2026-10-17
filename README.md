@@ -24,6 +24,7 @@
 
 ## Project Directory Structure
 
+```text
 ABCJ-MEVN/
 ├── backend/
 │   ├── .env               # Environment variables (MongoDB URI, Port)
