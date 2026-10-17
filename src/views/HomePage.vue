@@ -83,7 +83,7 @@ const topRestaurants = ref([])
 const latestRestaurants = ref([])
 
 // Automatically switches between local proxy and live Render backend
-const API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
 const handleSearch = () => {
   router.push({ path: '/restaurants', query: { q: searchQuery.value } })
