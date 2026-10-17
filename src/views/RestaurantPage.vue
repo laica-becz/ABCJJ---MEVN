@@ -48,8 +48,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 const restaurants = ref([])
 const uniqueCuisines = ref([])
 const filters = ref({ q: '', cuisine: '', sort: '' })
@@ -67,10 +69,24 @@ const deleteRestaurant = async (id) => {
   }
 }
 
+// Check URL query parameters when component mounts or route changes
+const applyRouteQuery = () => {
+  if (route.query.q) {
+    filters.value.q = route.query.q
+  }
+  fetchRestaurants()
+}
+
 onMounted(async () => {
-  await fetchRestaurants()
+  applyRouteQuery()
   const res = await fetch('/api/restaurants')
   const all = await res.json()
   uniqueCuisines.value = [...new Set(all.map((r) => r.cuisine))]
+})
+
+// Watch for changes if a user clicks another card while already on the page
+watch(() => route.query.q, (newQ) => {
+  filters.value.q = newQ || ''
+  fetchRestaurants()
 })
 </script>

@@ -9,7 +9,7 @@
         <router-link to="/">Home</router-link>
         <router-link to="/restaurants">Restaurants</router-link>
         <router-link to="/about">About</router-link>
-        <router-link to="/form">Feedback</router-link>
+        <router-link to="/feedback">Feedback</router-link>
       </nav>
       <router-link class="btn primary sm" to="/restaurants">
         <span>Manage Restaurants</span>
