@@ -80,8 +80,8 @@ async function nextId() {
   return (last?.restaurant_id || 0) + 1;
 }
 
-// List + search / filter / sort
-app.get('/api/restaurants', wrap(async (req, res) => {
+// List + search / filter / sort (supports optional trailing slashes)
+app.get('/api/restaurants\/?', wrap(async (req, res) => {
   const { q, cuisine, location, sort } = req.query;
   const filter = {};
   if (q) {
@@ -100,7 +100,7 @@ app.get('/api/restaurants', wrap(async (req, res) => {
 }));
 
 // Dashboard stats
-app.get('/api/stats', wrap(async (req, res) => {
+app.get('/api/stats\/?', wrap(async (req, res) => {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [total, recent, avg] = await Promise.all([
     restaurants.countDocuments(),
@@ -111,14 +111,14 @@ app.get('/api/stats', wrap(async (req, res) => {
 }));
 
 // Find by ID
-app.get('/api/restaurants/:id', wrap(async (req, res) => {
+app.get('/api/restaurants/:id\/?', wrap(async (req, res) => {
   const doc = await restaurants.findOne({ restaurant_id: parseId(req.params.id) });
   if (!doc) return res.status(404).json({ error: 'Restaurant not found' });
   res.json(doc);
 }));
 
 // Create
-app.post('/api/restaurants', wrap(async (req, res) => {
+app.post('/api/restaurants\/?', wrap(async (req, res) => {
   const data = validateRestaurant(req.body);
   const now = new Date();
   const doc = { ...data, restaurant_id: await nextId(), createdAt: now, updatedAt: now };
@@ -127,7 +127,7 @@ app.post('/api/restaurants', wrap(async (req, res) => {
 }));
 
 // Update
-app.put('/api/restaurants/:id', wrap(async (req, res) => {
+app.put('/api/restaurants/:id\/?', wrap(async (req, res) => {
   const data = validateRestaurant(req.body);
   const doc = await restaurants.findOneAndUpdate(
     { restaurant_id: parseId(req.params.id) },
@@ -139,17 +139,22 @@ app.put('/api/restaurants/:id', wrap(async (req, res) => {
 }));
 
 // Delete
-app.delete('/api/restaurants/:id', wrap(async (req, res) => {
+app.delete('/api/restaurants/:id\/?', wrap(async (req, res) => {
   const doc = await restaurants.findOneAndDelete({ restaurant_id: parseId(req.params.id) });
   if (!doc) return res.status(404).json({ error: 'Restaurant not found' });
   res.status(204).end();
 }));
 
+// Catch-all safety for any unmatched /api routes (prevents serving HTML by mistake)
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
 // Serve static frontend files from Vite build in production
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Express v5 compliant SPA wildcard fallback
-app.get('/(.*)', (req, res) => {
+// SPA wildcard fallback for frontend routes
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
