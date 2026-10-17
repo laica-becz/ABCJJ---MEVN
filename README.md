@@ -1,24 +1,13 @@
-# ABCJ Finds · Restaurant Database & Management System
+# ABCJ Finds - MEVN Restaurant Database
 
-> A modern, responsive restaurant database application powered by **MongoDB**, **Express**, **Vue.js (Vite)**, and **Node.js** (MEVN Stack). Designed to help users discover, search, manage, and keep local dining favorites in Pampanga up to date.
-
----
-
-## Features
-
-- **Local Discovery & Search:** Search restaurants by name, cuisine, or Pampanga location with instant filter options.
-- **Interactive Dashboard:** Live database statistics tracking total records, recent updates (past 7 days), and average user ratings.
-- **Full CRUD Operations:** Add new restaurant entries, update existing details, or remove records seamlessly.
-- **Feedback & Support Hub:** Direct contact channels and user feedback submission form.
-- **Modern UI/UX:** Clean typography, custom styling, and responsive layout built with Vue 3 Composition API and Vue Router.
-
----
+A thoughtfully organized restaurant database application built with Vue 3, Express.js, and MongoDB Atlas, deployed natively using a unified Vercel Serverless architecture.
 
 ## Tech Stack
 
-- **Frontend:** Vue 3, Vite, Vue Router 4, Vanilla CSS
-- **Backend:** Node.js, Express.js
-- **Database:** MongoDB (via official native MongoDB Driver)
+- **Frontend:** Vue 3 (Composition API), Vue Router, Vite
+- **Backend:** Node.js, Express.js (Serverless Functions)
+- **Database:** MongoDB Atlas (`dbRestaurants`)
+- **Hosting & Deployment:** Vercel
 
 ---
 
@@ -26,27 +15,26 @@
 
 ```text
 ABCJ-MEVN/
-├── backend/
-│   ├── .env               # Environment variables (MongoDB URI, Port)
-│   └── server.js          # Express API server & MongoDB connection logic
-├── images/
-│   └── logo.png           # Brand asset
-├── node_modules/
+├── api/
+│   └── index.js             Unified Express & MongoDB Serverless Backend
 ├── src/
-│   ├── assets/
-│   │   └── styles.css     # Global design system & styles
+│   ├── assets/              Static assets (images, icons)
 │   ├── router/
-│   │   └── index.js       # Vue Router configuration
-│   ├── views/
-│   │   AboutPage.vue      # Developer credits & platform info
-│   │   FormPage.vue       # Feedback & contact form page
-│   │   HomePage.vue       # Dashboard stats, top-rated cards, latest updates
-│   │   RestaurantPage.vue # Filterable, searchable restaurant grid with CRUD actions
-│   ├── App.vue            # Root component layout (Header, Router View, Footer)
-│   └── main.js            # Vue application entry point
-├── index.html             # Vite HTML root template
-├── package.json           # Project dependencies and build scripts
-└── vite.config.js         # Vite configuration file
+│   │   └── index.js         Vue Router configuration
+│   ├── views/               Vue Page Components
+│   │   ├── AboutPage.vue
+│   │   ├── FeedbackPage.vue
+│   │   ├── FormPage.vue
+│   │   ├── HomePage.vue
+│   │   └── RestaurantPage.vue
+│   ├── App.vue              Root Vue Component
+│   └── main.js              Frontend Entry Point
+├── index.html               Root HTML template
+├── package.json             Consolidated dependencies (Vue + Express + MongoDB)
+├── package-lock.json        Dependency lockfile
+├── vercel.json              Vercel deployment and API rewrite rules
+├── vite.config.js           Vite build configuration
+└── README.md                Project documentation
 ```
 
 ---
@@ -57,14 +45,15 @@ ABCJ-MEVN/
 - Node.js (v18+ recommended) installed on your system.
 - MongoDB running locally (`mongodb://127.0.0.1:27017`) or a connection string to MongoDB Atlas.
 
+## Local Setup and Running Guide
+
 ### 1. Clone or Open the Project
 Navigate to your project root folder:
 ```bash
 cd C:\Users\PC\ABCJ-MEVN
-```
 
 ### 2. Configure the Backend Environment
-Create a `.env` file inside your **backend** folder with the following variables:
+Create a .env file directly inside your project root folder with the following variables:
 ```env
 MONGODB_URI=mongodb://<username>:<password>@ac-ju136tq-shard-00-00.abv92xg.mongodb.net:27017,ac-ju136tq-shard-00-01.abv92xg.mongodb.net:27017,ac-ju136tq-shard-00-02.abv92xg.mongodb.net:27017/dbRestaurants?ssl=true&replicaSet=atlas-tk4q9n-shard-0&authSource=admin&appName=Cluster0
 DB_NAME=dbRestaurants
@@ -72,30 +61,19 @@ PORT=3000
 ```
 
 ### 3. Install Dependencies
-Install packages for both frontend and backend directories if required:
+Install all project dependencies (frontend and backend packages combined) from the root folder:
 ```bash
 npm install
 ```
 
----
-
-## Running the Application
+## 4. Running the Application Locally
 
 To run the full stack locally, you need two separate terminal windows:
 
-### Terminal 1: Start the Backend API Server
+### Terminal: 
 ```bash
-cd backend
-node server.js
+vercel dev
 ```
-*Your Express server will connect to MongoDB and run on `http://localhost:3000`.*
-
-### Terminal 2: Start the Frontend Vue Development Server
-```bash
-npm run dev
-```
-*Vite will start your local development server at `http://localhost:5173`.*
-
 ---
 
 ## The ABCJ Team
