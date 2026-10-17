@@ -58,6 +58,7 @@ const router = useRouter()
 
 const isEdit = ref(false)
 const editId = ref(null)
+const API_URL = import.meta.env.VITE_API_URL || ''
 
 const form = ref({
   name: '',
@@ -72,7 +73,7 @@ onMounted(async () => {
     isEdit.value = true
     editId.value = route.query.edit
     try {
-      const res = await fetch(`/api/restaurants/${editId.value}`)
+      const res = await fetch(`${API_URL}/api/restaurants/${editId.value}`)
       if (res.ok) {
         const data = await res.json()
         form.value = {
@@ -91,13 +92,13 @@ onMounted(async () => {
 
 const handleSubmit = async () => {
   try {
-    const url = isEdit.value ? `/api/restaurants/${editId.value}` : '/api/restaurants'
+    const url = isEdit.value ? `${API_URL}/api/restaurants/${editId.value}` : `${API_URL}/api/restaurants`
     const method = isEdit.value ? 'PUT' : 'POST'
 
     const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.JSON ? JSON.stringify(form.value) : JSON.stringify(form.value)
+      body: JSON.stringify(form.value)
     })
 
     const data = await res.json()
