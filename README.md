@@ -51,6 +51,7 @@ ABCJ-MEVN/
 Navigate to your project root folder:
 ```bash
 cd C:\Users\PC\ABCJ-MEVN
+```
 
 ### 2. Configure the Backend Environment
 Create a .env file directly inside your project root folder with the following variables:
